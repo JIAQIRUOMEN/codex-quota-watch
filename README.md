@@ -8,72 +8,28 @@
 [![MIT License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 [![Windows popup](https://img.shields.io/badge/Windows-popup%20optional-0078D4)](docs/INSTALL.md)
 
-完整安装与数据源配置见 [安装指南](docs/INSTALL.md)；项目说明页见 [docs/index.html](docs/index.html)。
+Codex Quota Watch 从你配置的 X 帖子来源读取更新，提醒 Codex 额度重置公告和已确认的重置状态。
 
-**English overview:** A small, local Python 3.10+ watcher that reads JSON posts from an explicitly configured source, filters an author allowlist, and keeps reset announcements pending until you acknowledge them. Windows popups are optional; no network source or account credentials are installed by this package.
+## 命令安装
 
-这是一个本地运行的 Codex 配额重置动态提醒器。它读取用户提供的 JSON 快照，或通过参数数组启动用户配置的数据源；只处理 allowlist 中作者的帖子。程序先静默建立基线，之后把“重置公告”和“明确报告已经完成”视为两个阶段，各自最多提醒一次。提醒会一直保持待确认，直到你点击窗口中的确认按钮或执行 `ack` 命令；关闭窗口或测试自动关闭不会确认提醒。
-
-## 下载：程序包和 Skill 是两回事
-
-| 下载 | 内容与用途 |
-|---|---|
-| [⬇ 下载 source ZIP](https://github.com/JIAQIRUOMEN/codex-quota-watch/releases/latest/download/codex-quota-watch-source.zip) · [查看所有 Releases](https://github.com/JIAQIRUOMEN/codex-quota-watch/releases) | Python CLI、Windows 提醒器、示例与文档。需要实际运行 CLI 时安装它。 |
-| [⬇ 下载 Skill ZIP](https://github.com/JIAQIRUOMEN/codex-quota-watch/releases/latest/download/codex-quota-watch-skill.zip) · [查看所有 Releases](https://github.com/JIAQIRUOMEN/codex-quota-watch/releases) | 只有给 Codex 使用的 `SKILL.md` 指令，不含 Python CLI，也不会自行运行或建立定时任务。 |
-
-以上链接指向最新 GitHub Release 资产；若项目尚未发布 Release，资产链接暂不可用。完整新手教程见[安装指南](docs/INSTALL.md)。
-
-### 安装 Python CLI
-
-需要 Python 3.10+。下载并解压 source ZIP，进入其中包含 `pyproject.toml` 的 `codex-quota-watch` 目录，再运行：
+先安装 Codex Skill 和 Python 程序。需要 Node.js/npm、Git 和 Python 3.10 或更新版本：
 
 ```powershell
-python -m pip install .
-codex-quota-watch --help
-```
-
-也可以直接从 GitHub 安装：
-
-```powershell
+npx skills add JIAQIRUOMEN/codex-quota-watch
 python -m pip install "git+https://github.com/JIAQIRUOMEN/codex-quota-watch.git"
 ```
 
-CLI 安装不会启动监测。`python -m codex_quota_watch` 也可用于调用命令行。
+## 下载 ZIP 安装
 
-### 安装 Codex Skill（可选）
+下载 [Skill ZIP](https://github.com/JIAQIRUOMEN/codex-quota-watch/releases/latest/download/codex-quota-watch-skill.zip)，解压到 `C:\Users\你的用户名\.codex\skills\`，确认文件位于 `C:\Users\你的用户名\.codex\skills\codex-quota-watch\SKILL.md`，不要再套一层同名文件夹。若设置了 `CODEX_HOME`，则解压到 `%CODEX_HOME%\skills\`。
 
-在 Windows 上，默认安装目录为 `$HOME\.codex\skills\codex-quota-watch`（`$HOME` 通常是 `C:\Users\你的用户名`）。如果设置了自定义 `$env:CODEX_HOME`，则使用 `$env:CODEX_HOME\skills\codex-quota-watch`。
-
-Skill ZIP 内只有一层目录：`codex-quota-watch\SKILL.md`。把它解压到 skills 根目录即可，不要再额外套一层同名文件夹：
+下载 [源码 ZIP](https://github.com/JIAQIRUOMEN/codex-quota-watch/releases/latest/download/codex-quota-watch-source.zip) 并解压，进入 `pyproject.toml` 所在目录，运行：
 
 ```powershell
-$skillRoot = if ($env:CODEX_HOME) { Join-Path $env:CODEX_HOME 'skills' } else { Join-Path $HOME '.codex\skills' }
-New-Item -ItemType Directory -Force -Path $skillRoot | Out-Null
-Expand-Archive -LiteralPath .\codex-quota-watch-skill.zip -DestinationPath $skillRoot -Force
-Get-Content (Join-Path $skillRoot 'codex-quota-watch\SKILL.md') -TotalCount 8
+python -m pip install .
 ```
 
-安装后开一个新的 Codex 回合并调用 `$codex-quota-watch`。如果 Codex 还识别不到该 Skill，重启 Codex 后再试。Skill ZIP 不含 Python 程序包；要运行监测 CLI，仍需单独安装 source ZIP 或用 pip 安装上面的 Python 包。
-
-## 首次启用监测
-
-安装不会自动读取帖子、打开窗口或安排轮询。需要监测时，在 Codex 明确说 **“启用额度监测”** 或 **“每3小时监测”**；只想检查安装则说只做一次测试。首次启用需要可用的 Python CLI，以及能登录并读取目标账号真实帖子的可刷新数据源。此项目不提供 X 登录或内置抓取器。
-
-```mermaid
-flowchart TD
-    A[安装 CLI 与可选 Skill] --> B[新开 Codex 回合调用 $codex-quota-watch]
-    B --> C{明确选择测试或监测}
-    C -->|测试| D[单次验证]
-    C -->|启用监测| E[验证真实来源与登录]
-    E --> F{真实帖子可读且来源可刷新?}
-    F -->|否| G[保持待配置，不声称正在运行]
-    F -->|是| H[首次成功读取，静默建立基线]
-    H --> I{宿主支持自动化?}
-    I -->|是| J[复用或创建当前聊天每3小时检查]
-    I -->|否| K[前台 watch，终端需保持打开]
-```
-
-成功验证真实来源后，首次读取只建立静默基线。宿主支持自动化时，Codex 会先检查并复用已有匹配任务，再为当前聊天安排每3小时检查；如果读不到真实内容，设置会保持待完成，不会使用样例伪装成正在监测。电脑休眠、离线或应用关闭可能延迟检查；不提供全天候云端监控，也不会安装后台服务或开机自启。
+两种方式装好后，重启 Codex 或新开一轮对话，输入 `$codex-quota-watch`，再让它启用每 3 小时监测。设置任务前，需要能登录并刷新真实 X 来源，且成功读取帖子；首次读取会静默建立基线，之后才安排检查。电脑休眠或离线时，检查会延迟。
 
 ## 离线示例
 
