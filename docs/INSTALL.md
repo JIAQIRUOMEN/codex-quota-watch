@@ -102,3 +102,36 @@ codex-quota-watch --state-dir .\codex-quota-watch-state status
 监测和 heartbeat 需要本机可用。关闭应用、网络中断、电脑休眠或离线都会延迟检查；这不是全天候云端监控。工具不能发送桌宠消息或切换正在运行的 Codex 模型。
 
 Windows 弹窗由包内 PowerShell/WPF 程序显示。`displayed` 表示窗口已呈现，不代表用户已确认；只有点击确认按钮或执行 `ack ID` 才会清除提醒。关闭窗口、成功启动进程都不算确认。回执会在下一次轮询时同步。
+
+## 可选：北京时间每日暂停
+
+CLI 默认值是 `confirmed` 和 UTC+08:00（480 分钟）。先查看当前值：
+
+```powershell
+codex-quota-watch --state-dir .\codex-quota-watch-state settings
+```
+
+由用户决定并只执行一种策略：
+
+```powershell
+# 明确报告已完成后暂停当天抓取（默认）
+codex-quota-watch --state-dir .\codex-quota-watch-state settings --daily-pause confirmed --utc-offset-minutes 480
+
+# 当天出现重置公告就暂停抓取
+codex-quota-watch --state-dir .\codex-quota-watch-state settings --daily-pause announcement --utc-offset-minutes 480
+
+# 关闭每日暂停
+codex-quota-watch --state-dir .\codex-quota-watch-state settings --daily-pause off --utc-offset-minutes 480
+```
+
+触发条件是：本轮成功读取并首次识别到非基线事件、来源时间明确属于北京时间当天、且 CLI 阶段符合所选策略。`confirmed` 只匹配 `confirmed` 阶段；`announcement` 匹配 `announcement` 或 `confirmed` 阶段。旧帖、静默基线和未知/缺失的原帖时间不触发。这里按原帖时间判断，不把浏览器人工核验的上下文推断为 CLI `confirmed`；例如“today is a reset”仍须以 CLI 明确阶段为准。
+
+`announcement` 会在公告后立即暂停，可能错过当天稍后的作者确认，也可能延迟模型切换判定；`confirmed` 保留当天后续确认的观察机会；`off` 不暂停抓取。“一天一次”仅是减少本地来源调用的策略，不是官方重置周期或服务保证。模式更改会清除当前每日 gate，但保留已有提醒记录。
+
+监测每三小时的心跳继续按原安排运行。每次对 X、browser 或来源命令操作前，CLI `gate` 先检查本地状态；返回 `should_fetch=false` 时，不访问来源、不生成快照、不更新 `monitor.json` 中的来源成功时间或基线，而只运行：
+
+```powershell
+codex-quota-watch --state-dir .\codex-quota-watch-state tick
+```
+
+`tick` 仅重试已有待确认提醒并同步回执，不抓取、不创建新提醒。`gate` 本身也不安排定时器；它返回的 `resume_at` 是次日北京时间午夜的 UTC 表示。到达午夜后，实际抓取在下一次原定心跳恢复，而不是午夜立即运行。心跳仍会唤醒并可能消耗宿主/模型资源；此策略省去的是 browser 和来源调用，不承诺零成本。

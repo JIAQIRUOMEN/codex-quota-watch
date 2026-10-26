@@ -8,6 +8,8 @@ from email.utils import parsedate_to_datetime
 from typing import Any, Iterable
 from urllib.parse import urlparse
 
+from .daily import gate_for_alert
+
 ALLOWED_AUTHORS = frozenset({"thsottiaux"})
 _CONFIRMED = re.compile(
     r"\b(?:reset (?:has been |is |was )?(?:completed|complete|done)|quota (?:has(?: been)? |was )reset|quota is reset|quota reset (?:is )?(?:completed|complete|done)|resets? (?:has been |is |was )?(?:completed|complete|done))\b",
@@ -142,6 +144,7 @@ def make_alert(classified: dict[str, Any]) -> dict[str, Any]:
         "id": _safe_id(classified["id"], stage),
         "receipt_nonce": secrets.token_hex(16),
         "post_id": classified["id"],
+        "source_created_at": classified["created_at"],
         "stage": stage,
         "title": "Codex 配额重置已确认" if stage == "confirmed" else "Codex 配额重置公告",
         "message": "thsottiaux 报告 Codex 配额重置已完成。" if stage == "confirmed" else "thsottiaux 发布了 Codex 配额重置公告。",
@@ -151,7 +154,7 @@ def make_alert(classified: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def poll_once(store: Any, posts: Iterable[Any], author_allowlist: Iterable[str] = ALLOWED_AUTHORS) -> list[dict[str, Any]]:
+def poll_once(store: Any, posts: Iterable[Any], author_allowlist: Iterable[str] = ALLOWED_AUTHORS, now: datetime | None = None) -> list[dict[str, Any]]:
     """Baseline silently once, then persist new author/stage alerts."""
     allow = {str(x).strip().lower().lstrip("@") for x in author_allowlist}
     normalized = []
@@ -174,7 +177,8 @@ def poll_once(store: Any, posts: Iterable[Any], author_allowlist: Iterable[str] 
             store.register(result["id"], key_stage)
         else:
             alert = make_alert(result)
-            if store.register(result["id"], key_stage, alert):
+            pause_gate = gate_for_alert(alert, store.get_settings(), now=now)
+            if store.register(result["id"], key_stage, alert, pause_gate=pause_gate):
                 created.append(alert)
     if is_baseline:
         store.finish_baseline()

@@ -80,6 +80,29 @@ codex-quota-watch --state-dir .\state watch --source-command-json '["your-refres
 
 `watch` 需要能实时刷新的来源命令；不要把静态 JSON 快照当成定时数据源。
 
+## 北京时间每日暂停（可选策略）
+
+先查看设置；当前默认是 `confirmed`（明确报告重置已完成）和 UTC+08:00：
+
+```powershell
+codex-quota-watch --state-dir .\state settings
+```
+
+用户选定策略后，再执行对应命令。下面是三种**互斥示例**，不要一次性全部运行：
+
+```powershell
+# 确认完成后暂停当日抓取；默认模式
+codex-quota-watch --state-dir .\state settings --daily-pause confirmed --utc-offset-minutes 480
+
+# 见到重置公告就暂停当日抓取
+codex-quota-watch --state-dir .\state settings --daily-pause announcement --utc-offset-minutes 480
+
+# 关闭每日暂停
+codex-quota-watch --state-dir .\state settings --daily-pause off --utc-offset-minutes 480
+```
+
+`confirmed` 只在明确完成阶段暂停；`announcement` 在公告或完成阶段都会暂停，更早停止读取，可能错过当天稍后的确认消息并延迟模型切换判定；`off` 每轮照常尝试读取。只有本轮新增的非基线事件、原帖时间明确属于当天且事件阶段符合策略，才会触发暂停；旧帖、首次静默基线和未知时间不会触发。次日北京时间 00:00 后，下一次原定三小时检查才恢复抓取，并非午夜立即运行。暂停期间 `gate` 只读本地状态、`tick` 只处理已有提醒和回执，不访问 X、不推进来源检查时间；定时心跳仍会唤醒，能省浏览器/来源调用，但不代表不消耗任何模型资源。“一天一次”只是本地节省调用的策略，不是官方重置保证。
+
 ## 分类与限制
 
 - 作者 allowlist 目前限定为 `thsottiaux`。其他作者的帖子不会触发提醒。

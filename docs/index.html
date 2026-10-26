@@ -40,6 +40,7 @@ codex-quota-watch --state-dir .\state ack &lt;提醒ID&gt;</code></pre><p><a hre
       <article class="card"><h3>文本规则有边界</h3><p>分类偏保守，但讽刺、引用、否定和复杂语境仍可能带来误判。</p></article>
       <article class="card"><h3>不切换模型</h3><p>没有可验证的 Codex 宿主切换接口，因此不会自动换模型。宠物或动画提示属于尽力而为，不保证送达。</p></article>
     </div></section>
+    <section id="daily-pause"><h2>北京时间每日暂停（可选）</h2><p class="lead">默认 <code>confirmed</code>：只有本轮新识别、原帖时间明确属于今天且阶段为完成的事件会暂停当天抓取。<code>announcement</code> 对当天新公告或完成事件都会暂停，更早停止读取，可能错过后续确认并延迟模型切换判定；<code>off</code> 不暂停。次日午夜后等下一次三小时心跳才恢复。可用 <code>codex-quota-watch --state-dir .\state settings</code> 查看，完整策略和命令见<a href="INSTALL.md">安装指南</a>。一天一次只是节省来源调用的策略，不是官方重置保证。</p></section>
   </main>
   <footer><span>Codex Quota Watch · MIT License</span><span><a href="../README.md">README</a> · <a href="../LICENSE">License</a> · <a href="INSTALL.md">安装文档</a></span></footer>
 </div>

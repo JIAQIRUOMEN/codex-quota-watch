@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from .core import poll_once
+from .daily import daily_gate
 from .notifier import dispatch_pending, launch_windows_alert
 from .source import run_source, unwrap_posts
 from .store import Store
@@ -42,10 +43,29 @@ def _parser() -> argparse.ArgumentParser:
     watch.add_argument("--interval", type=float, default=10800, help="seconds between polls (default: 10800)")
     status = commands.add_parser("status", help="show pending and acknowledged alerts")
     add_state_option(status)
+    settings = commands.add_parser("settings", help="show or update daily pause settings")
+    add_state_option(settings)
+    settings.add_argument("--daily-pause", choices=("confirmed", "announcement", "off"))
+    settings.add_argument("--utc-offset-minutes", type=_utc_offset_minutes)
+    gate = commands.add_parser("gate", help="check local daily pause state without reading a source")
+    add_state_option(gate)
+    tick = commands.add_parser("tick", help="retry pending notifications and sync receipts without reading a source")
+    add_state_option(tick)
+    tick.add_argument("--dry-run", action="store_true", help="write validated event JSON but do not open a popup")
     ack = commands.add_parser("ack", help="acknowledge an alert explicitly by ID")
     add_state_option(ack)
     ack.add_argument("id")
     return parser
+
+
+def _utc_offset_minutes(value: str) -> int:
+    try:
+        offset = int(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("must be an integer number of minutes") from exc
+    if not -720 <= offset <= 840:
+        raise argparse.ArgumentTypeError("must be between -720 and 840 minutes")
+    return offset
 
 
 def _load_posts(args: argparse.Namespace) -> list[dict[str, Any]]:
@@ -66,11 +86,34 @@ def _load_posts(args: argparse.Namespace) -> list[dict[str, Any]]:
     return run_source(command, timeout=args.source_timeout)
 
 
-def _poll(args: argparse.Namespace, store: Store) -> dict[str, Any]:
+def _notifier(args: argparse.Namespace):
+    return lambda alert, receipt: launch_windows_alert(alert, receipt, dry_run=getattr(args, "dry_run", False))
+
+
+def _poll(args: argparse.Namespace, store: Store, now=None, notifier=None) -> dict[str, Any]:
+    gate = daily_gate(store, now=now)
+    receipt_dir = Path(args.state_dir) / "receipts"
+    notify = notifier or _notifier(args)
+    if not gate["should_fetch"]:
+        outcomes = dispatch_pending(store, receipt_dir, notifier=notify)
+        return {
+            "skipped": True,
+            "daily_pause": True,
+            "resume_at": gate["resume_at"],
+            "reason": gate["reason"],
+            "trigger_metadata": gate["trigger_metadata"],
+            "notifications": outcomes,
+            "pending": len(store.pending()),
+        }
     posts = _load_posts(args)
-    created = poll_once(store, posts)
-    outcomes = dispatch_pending(store, Path(args.state_dir) / "receipts", notifier=lambda alert, receipt: launch_windows_alert(alert, receipt, dry_run=args.dry_run))
-    return {"new_alerts": created, "notifications": outcomes, "pending": len(store.pending())}
+    created = poll_once(store, posts, now=now)
+    outcomes = dispatch_pending(store, receipt_dir, notifier=notify)
+    return {"skipped": False, "daily_pause": False, "new_alerts": created, "notifications": outcomes, "pending": len(store.pending())}
+
+
+def _tick(args: argparse.Namespace, store: Store) -> dict[str, Any]:
+    outcomes = dispatch_pending(store, Path(args.state_dir) / "receipts", notifier=_notifier(args))
+    return {"notifications": outcomes, "pending": len(store.pending())}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -90,7 +133,21 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps({"acknowledged": args.id}))
         return 0
     if args.command == "status":
-        print(json.dumps({"pending": store.pending(), "alerts": store.all_alerts()}, ensure_ascii=False, indent=2))
+        print(json.dumps({"pending": store.pending(), "alerts": store.all_alerts(), "settings": store.get_settings(), "daily_pause": daily_gate(store)}, ensure_ascii=False, indent=2))
+        return 0
+    if args.command == "settings":
+        try:
+            current = store.set_settings(args.daily_pause, args.utc_offset_minutes) if args.daily_pause is not None or args.utc_offset_minutes is not None else store.get_settings()
+        except ValueError as exc:
+            print(str(exc), file=sys.stderr)
+            return 2
+        print(json.dumps(current, ensure_ascii=False, indent=2))
+        return 0
+    if args.command == "gate":
+        print(json.dumps(daily_gate(store), ensure_ascii=False, indent=2))
+        return 0
+    if args.command == "tick":
+        print(json.dumps(_tick(args, store), ensure_ascii=False, indent=2))
         return 0
     if args.command == "poll":
         try:
