@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#102522"><meta name="description" content="Codex Quota Watch（Codex 额度重置检测）：本地、保守的 Codex 配额重置动态提醒器。">
+  <title>Codex Quota Watch · Codex 额度重置检测</title>
+  <style>
+    :root{color-scheme:light;--ink:#111a28;--muted:#536274;--cream:#f2f5f7;--paper:#fff;--green:#007f96;--lime:#83f0f1;--line:#d6e0e6}
+    *{box-sizing:border-box}body{margin:0;color:var(--ink);background:var(--cream);font:16px/1.65 "Segoe UI","Microsoft YaHei UI",sans-serif}a{color:var(--green);text-underline-offset:3px}
+    .wrap{width:min(1080px,calc(100% - 36px));margin:auto}header{padding:28px 0 20px;display:flex;align-items:center;justify-content:space-between;gap:18px}.brand{font-weight:800;letter-spacing:.02em}.nav{display:flex;gap:20px;flex-wrap:wrap;font-size:.93rem}
+    .hero{overflow:hidden;border-radius:28px;background:#0c1727;color:#f8faff;box-shadow:0 20px 50px #12243b24}.hero img{display:block;width:100%;max-height:440px;object-fit:cover;background:#0b1524}.hero-copy{padding:clamp(24px,5vw,54px);display:grid;grid-template-columns:1.3fr .7fr;gap:36px;align-items:end}
+    h1{margin:0 0 12px;max-width:700px;font-size:clamp(2.4rem,6vw,4.6rem);line-height:1.03;letter-spacing:-.045em}.hero p{color:#d6e5f2;max-width:650px;margin:0}.actions{display:flex;flex-direction:column;gap:12px}.button{display:inline-flex;justify-content:center;align-items:center;min-height:48px;padding:10px 17px;border-radius:999px;background:var(--lime);color:#111a28;font-weight:750;text-decoration:none}.button.secondary{background:transparent;border:1px solid #57748a;color:#f8faff}
+    main{padding:54px 0 70px}section{margin:0 0 54px}h2{font-size:clamp(1.55rem,3vw,2.1rem);line-height:1.2;margin:0 0 16px}.lead{max-width:760px;color:var(--muted);margin:0 0 24px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.card{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:22px}.card h3{margin:0 0 8px;font-size:1.12rem}.card p{margin:0;color:var(--muted)}
+    .steps{counter-reset:step;display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.step{background:var(--paper);border-radius:18px;border:1px solid var(--line);padding:20px}.step:before{counter-increment:step;content:"0" counter(step);display:block;color:var(--green);font-weight:800;font-size:.83rem;margin-bottom:10px}.badges{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}.badge{display:inline-block;border:1px solid #597286;border-radius:999px;padding:3px 10px;color:#d6e5f2;font-size:.78rem}.downloads{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:22px}.download{border:1px solid #57748a;border-radius:16px;padding:18px;color:#f8faff}.download h3{margin:0 0 8px}.download p{margin:0 0 14px;color:#d6e5f2}.download .button{min-height:40px}code,pre{font-family:Consolas,"Cascadia Code",monospace}pre{overflow:auto;padding:18px;border-radius:14px;color:#eff5e8;background:#172a25;font-size:.9rem}.notice{border-left:4px solid #a9be50;padding:14px 18px;background:#ebefd9;border-radius:0 12px 12px 0;color:#34483e}
+    footer{border-top:1px solid var(--line);padding:24px 0 40px;color:var(--muted);font-size:.9rem;display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}@media(max-width:760px){.hero-copy{grid-template-columns:1fr}.grid,.steps,.downloads{grid-template-columns:1fr}header{align-items:flex-start;flex-direction:column}}
+  </style>
+</head>
+<body><div class="wrap">
+  <header><div class="brand">CODEX QUOTA WATCH</div><nav class="nav" aria-label="主导航"><a href="#features">功能</a><a href="#start">快速开始</a><a href="#limits">边界</a><a href="INSTALL.md">安装指南</a></nav></header>
+  <div class="hero"><img src="cover.png" alt="Codex Quota Watch 项目封面"><div class="hero-copy"><div><h1>配额更新，<br>有据可查。</h1><p>本地 Python 工具读取你配置的帖子来源，区分重置公告与明确完成状态，并保留待确认提醒。</p><div class="badges"><span class="badge">Python 3.10+</span><span class="badge">MIT License</span><span class="badge">Windows popup optional</span></div><div class="downloads"><article class="download"><h3>Source ZIP</h3><p>Python CLI、Windows 窗口与示例；运行前需单独安装。</p><a class="button" href="https://github.com/JIAQIRUOMEN/codex-quota-watch/releases/latest/download/codex-quota-watch-source.zip">下载程序包</a></article><article class="download"><h3>Skill ZIP</h3><p>只含 Codex 指令，不含 Python 程序，也不会自动启动。</p><a class="button" href="https://github.com/JIAQIRUOMEN/codex-quota-watch/releases/latest/download/codex-quota-watch-skill.zip">下载 Codex Skill</a></article></div></div><div class="actions"><a class="button" href="https://github.com/JIAQIRUOMEN/codex-quota-watch/releases">所有 GitHub Releases</a><a class="button secondary" href="INSTALL.md">新手安装与启用教程</a></div></div></div>
+  <main>
+    <p class="notice"><strong>安装不会自动开始监测。</strong>安装包或 Skill 不会自行运行或建立定时任务。需要监测时，在 Codex 明确说“启用额度监测”或“每3小时监测”；只有确认真实账号帖子可读、静默基线建立，并验证自动化配置后，才算启用。</p>
+    <section id="features"><h2>让提醒保持清楚</h2><p class="lead">程序从静默基线开始，之后按帖子和阶段去重。每一条提醒留在待确认列表，直到你亲自执行确认。</p><div class="grid">
+      <article class="card"><h3>分开公告与完成</h3><p>先对重置公告提醒一次；出现明确的完成措辞后，再对完成状态提醒一次。</p></article>
+      <article class="card"><h3>本地状态</h3><p>SQLite 保存去重与待确认状态。Windows 可选择显示本地窗口收据。</p></article>
+      <article class="card"><h3>时间不猜测</h3><p>时间分类包含明确、估计、未知。没有依据时显示未知，不把推测写成事实。</p></article>
+    </div></section>
+    <section id="start"><h2>几步开始</h2><div class="steps">
+      <article class="step"><strong>按需安装</strong><p>Source ZIP 用于运行 CLI；Skill ZIP 只教 Codex 如何协助设置。需要两者时分别安装。</p></article>
+      <article class="step"><strong>新回合调用 Skill</strong><p>安装 Skill 后新开 Codex 回合，调用 <code>$codex-quota-watch</code>。未识别时重启 Codex。</p></article>
+      <article class="step"><strong>明确请求监测</strong><p>说“启用额度监测”或“每3小时监测”。需要真实、可刷新的来源和可用登录。</p></article>
+      <article class="step"><strong>验证后安排</strong><p>成功读取后静默建立基线，再配置当前聊天三小时检查；失败时不会声称已启用。</p></article>
+    </div><p class="lead">默认 Windows Skill 路径：<code>$HOME\.codex\skills\codex-quota-watch\SKILL.md</code>；自定义 <code>CODEX_HOME</code> 时为 <code>$env:CODEX_HOME\skills\codex-quota-watch\SKILL.md</code>。Skill ZIP 内部只有单层 <code>codex-quota-watch/SKILL.md</code>，直接解压到 skills 根目录即可。完整解压命令见<a href="INSTALL.md">安装指南</a>。</p><pre><code>python -m pip install .
+codex-quota-watch --state-dir .\state init
+codex-quota-watch --state-dir .\state poll --input .\examples\baseline.json --dry-run
+codex-quota-watch --state-dir .\state status
+codex-quota-watch --state-dir .\state ack &lt;提醒ID&gt;</code></pre><p><a href="INSTALL.md">完整安装、JSON 格式与数据源示例见安装指南 →</a></p></section>
+    <section id="limits"><h2>适用范围与限制</h2><p class="notice">项目内的帖子文件是合成样例，不是当前公告，也不包含真实用户数据。包本身不安装 X/Twitter 登录或凭证。</p><div class="grid" style="margin-top:16px">
+      <article class="card"><h3>来源需自行配置</h3><p>allowlist 目前为 <code>thsottiaux</code>。采集命令和账号状态由运行者维护。</p></article>
+      <article class="card"><h3>文本规则有边界</h3><p>分类偏保守，但讽刺、引用、否定和复杂语境仍可能带来误判。</p></article>
+      <article class="card"><h3>不切换模型</h3><p>没有可验证的 Codex 宿主切换接口，因此不会自动换模型。宠物或动画提示属于尽力而为，不保证送达。</p></article>
+    </div></section>
+  </main>
+  <footer><span>Codex Quota Watch · MIT License</span><span><a href="../README.md">README</a> · <a href="../LICENSE">License</a> · <a href="INSTALL.md">安装文档</a></span></footer>
+</div>
+</body></html>

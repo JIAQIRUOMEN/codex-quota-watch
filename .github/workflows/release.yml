@@ -1,0 +1,50 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install local package
+        run: python -m pip install .
+      - name: Run unit tests
+        run: python -m unittest discover -s tests -v
+      - name: Build release archives
+        run: python scripts/build_release.py --output-dir dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-assets
+          path: dist/*
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-assets
+          path: dist
+      - name: Create or update GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ github.ref_name }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          if ! gh release view "$TAG_NAME" --repo "$REPOSITORY" >/dev/null 2>&1; then
+            gh release create "$TAG_NAME" --repo "$REPOSITORY" --generate-notes
+          fi
+          gh release upload "$TAG_NAME" dist/* --repo "$REPOSITORY" --clobber
