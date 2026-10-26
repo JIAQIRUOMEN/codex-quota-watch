@@ -18,11 +18,17 @@ SOURCE_FILES = (
     "windows/Show-CodexQuotaAlert.ps1",
     "windows/Invoke-SmokeTest.ps1", "examples/announcement.json",
     "examples/baseline.json", "examples/confirmed.json",
-    "tests/test_monitor.py", "tests/windows_gui_smoke.py",
+    "tests/test_monitor.py", "tests/windows_gui_smoke.py", "tests/browser_extractor_smoke.cjs",
     "scripts/build_release.py", "skills/codex-quota-watch/SKILL.md",
+    "skills/codex-quota-watch/references/browser-source.md",
+    "skills/codex-quota-watch/scripts/extract-posts.js",
     ".github/workflows/release.yml", ".github/workflows/tests.yml",
 )
-SKILL_FILES = ("skills/codex-quota-watch/SKILL.md",)
+SKILL_FILES = (
+    "skills/codex-quota-watch/SKILL.md",
+    "skills/codex-quota-watch/references/browser-source.md",
+    "skills/codex-quota-watch/scripts/extract-posts.js",
+)
 
 
 def add_files(archive: zipfile.ZipFile, files: tuple[str, ...], root_prefix: str = "") -> None:
@@ -59,8 +65,8 @@ def main() -> int:
             source = ROOT / relative
             if not source.is_file():
                 raise FileNotFoundError(f"required release file is missing: {relative}")
-            skill_name = Path(relative).name
-            archive.write(source, f"codex-quota-watch/{skill_name}")
+            skill_relative = Path(relative).relative_to(Path("skills/codex-quota-watch"))
+            archive.write(source, (Path("codex-quota-watch") / skill_relative).as_posix())
     sums = output / "SHA256SUMS"
     sums.write_text("".join(f"{sha256(p)}  {p.name}\n" for p in (source_zip, skill_zip)), encoding="ascii")
     print(f"Created {source_zip}\nCreated {skill_zip}\nCreated {sums}")

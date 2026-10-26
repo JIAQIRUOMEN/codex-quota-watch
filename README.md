@@ -8,7 +8,7 @@
 [![MIT License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 [![Windows popup](https://img.shields.io/badge/Windows-popup%20optional-0078D4)](docs/INSTALL.md)
 
-Codex Quota Watch 从你配置的 X 帖子来源读取更新，提醒 Codex 额度重置公告和已确认的重置状态。
+Codex Quota Watch 通过 Skill 和本地命令行程序提醒 Codex 额度重置公告及已确认的重置状态。启用 Skill 时，若宿主提供浏览器工具，它会默认读取 X 上的 Tibo 主页和本人回复；CLI 则继续接收 JSON 或用户配置的数据源命令。
 
 ## 命令安装
 
@@ -21,7 +21,7 @@ python -m pip install "git+https://github.com/JIAQIRUOMEN/codex-quota-watch.git"
 
 ## 下载 ZIP 安装
 
-下载 [Skill ZIP](https://github.com/JIAQIRUOMEN/codex-quota-watch/releases/latest/download/codex-quota-watch-skill.zip)，解压到 `C:\Users\你的用户名\.codex\skills\`，确认文件位于 `C:\Users\你的用户名\.codex\skills\codex-quota-watch\SKILL.md`，不要再套一层同名文件夹。若设置了 `CODEX_HOME`，则解压到 `%CODEX_HOME%\skills\`。
+下载 [Skill ZIP](https://github.com/JIAQIRUOMEN/codex-quota-watch/releases/latest/download/codex-quota-watch-skill.zip)，解压到 `C:\Users\你的用户名\.codex\skills\`，确认有 `codex-quota-watch\SKILL.md`、`references\browser-source.md` 和 `scripts\extract-posts.js`，不要再套一层同名文件夹。若设置了 `CODEX_HOME`，则解压到 `%CODEX_HOME%\skills\`。
 
 下载 [源码 ZIP](https://github.com/JIAQIRUOMEN/codex-quota-watch/releases/latest/download/codex-quota-watch-source.zip) 并解压，进入 `pyproject.toml` 所在目录，运行：
 
@@ -75,8 +75,10 @@ codex-quota-watch --state-dir .\state poll --source-command-json '["opencli","tw
 循环检查示例（默认每三小时一次）：
 
 ```powershell
-codex-quota-watch --state-dir .\state watch --input .\source-snapshot.json --interval 10800
+codex-quota-watch --state-dir .\state watch --source-command-json '["your-refreshable-source","--json"]' --interval 10800
 ```
+
+`watch` 需要能实时刷新的来源命令；不要把静态 JSON 快照当成定时数据源。
 
 ## 分类与限制
 
@@ -98,3 +100,14 @@ python -m unittest discover -s tests -v
 ## License
 
 MIT，见 [LICENSE](LICENSE)。
+
+## 首次读取 Tibo
+
+1. 安装 Skill 和 Python 程序后，新开一个 Codex 回合，输入 `$codex-quota-watch`。
+2. 明确说：**“启用 Tibo 每3小时监测”**。
+3. 如果宿主提供浏览器工具，Skill 会打开 `https://x.com/thsottiaux` 和本人 Replies，使用只读 DOM 脚本读取可见帖子。首次遇到登录时，请你直接在浏览器里登录一次；后续复用该浏览器会话。不要把密码或 Cookie 发给 Codex，也不承诺保存密码或 Cookie。
+4. 成功读取真实帖子后，才会建立静默基线并安排检查。通常不需要自己写 JSON。空正文、登录失效或无法读取时会停在待配置，不会假报启动成功。
+
+如果宿主没有浏览器工具，需要你提供可用的数据源命令或 JSON；没有真实、可刷新的来源就无法开始监测。只读浏览器路线依赖宿主 browser 工具和 Skill ZIP 中的 `skills/codex-quota-watch/scripts/extract-posts.js`，它不是 pip 包内置的 X 抓取器或云服务。CLI 本身仍只接受 JSON 输入或用户配置的命令。
+
+遇到 Skill 识别、浏览器登录或空结果问题，按[浏览器读取教程与排查](skills/codex-quota-watch/references/browser-source.md)操作。

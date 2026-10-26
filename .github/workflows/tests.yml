@@ -17,7 +17,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
       - name: Install local package
         run: python -m pip install .
       - name: Run offline unit tests
         run: python -m unittest discover -s tests -v
+      - name: Run browser extractor fixture smoke test
+        run: node tests/browser_extractor_smoke.cjs
