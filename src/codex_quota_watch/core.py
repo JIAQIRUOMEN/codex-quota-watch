@@ -140,6 +140,48 @@ def make_alert(classified: dict[str, Any]) -> dict[str, Any]:
         "basis": (f"原帖明确给出时间短语：{classified['reset_at']}" if stage == "confirmed" and classified.get("reset_at") else (f"原帖估计/提及“{classified.get('timing_phrase')}”；未推断完成时间。" if timing_kind == "estimated" else ("原帖未提供可核验的生效时刻。" if stage == "confirmed" else "仅依据原帖公告措辞；未推断完成时间。"))),
         "confidence": "来源措辞" if stage == "confirmed" else "未确认",
     }
+    # Keep the compatibility fields above in Chinese. Translations only change
+    # the UI framing; source wording and timestamps remain verbatim.
+    if timing_kind == "estimated":
+        en_text = f"Mentioned in the original post: {classified.get('timing_phrase')}; announcement does not mean the reset is complete." if classified.get("timing_phrase") else "Estimated timing; the reset is not confirmed complete."
+        en_basis = f"The original post says “{classified.get('timing_phrase')}”; no completion time inferred." if classified.get("timing_phrase") else "No verifiable completion time was inferred."
+    elif stage == "confirmed" and classified.get("reset_at"):
+        en_text = f"Time stated in the original post: {classified['reset_at']} (original timezone retained)."
+        en_basis = f"The original post explicitly gives: {classified['reset_at']}"
+    elif stage == "confirmed":
+        en_text = "The post confirms completion; the exact completion time is not specified."
+        en_basis = "The original post does not give a verifiable effective time."
+    elif timing_kind == "explicit" and classified.get("reset_at"):
+        en_text = f"Time stated in the original post: {classified['reset_at']} (original timezone retained); announcement does not mean completion."
+        en_basis = f"The original post explicitly mentions: {classified['reset_at']}; completion is not inferred."
+    else:
+        en_text = "The author posted a reset-related announcement; completion is not confirmed."
+        en_basis = "Based only on the original announcement wording; no completion time inferred."
+    published_en = classified["published_beijing"]
+    for suffix, translated_suffix in (
+        ("(北京时间)", "(Beijing time)"),
+        ("(来源未注明时区)", "(source timezone not specified)"),
+        ("(原始来源时间)", "(original source time)"),
+    ):
+        if published_en.endswith(suffix):
+            published_en = published_en[:-len(suffix)] + translated_suffix
+            break
+    en_timing = {
+        "kind": timing_kind,
+        "published_text": (
+            f"Original post time: {published_en}"
+            if published_en
+            else "Original post time: not provided by source"
+        ),
+        "text": en_text,
+        "basis": en_basis,
+        "confidence": "Source wording" if stage == "confirmed" else "Unconfirmed",
+    }
+    if classified.get("timing_phrase") and classified.get("timing_phrase") not in en_timing["text"]:
+        # Preserve the author's original phrase; do not translate source text.
+        en_timing["text"] += f" Original wording: “{classified['timing_phrase']}”."
+    title_en = "Codex quota reset confirmed" if stage == "confirmed" else "Codex quota reset announcement"
+    message_en = "thsottiaux reports that the Codex quota reset is complete." if stage == "confirmed" else "thsottiaux posted a Codex quota reset announcement."
     return {
         "id": _safe_id(classified["id"], stage),
         "receipt_nonce": secrets.token_hex(16),
@@ -151,6 +193,15 @@ def make_alert(classified: dict[str, Any]) -> dict[str, Any]:
         "ack_label": "已知晓",
         "url": classified["url"],
         "timing": timing,
+        "translations": {
+            "zh-CN": {
+                "title": "Codex 配额重置已确认" if stage == "confirmed" else "Codex 配额重置公告",
+                "message": "thsottiaux 报告 Codex 配额重置已完成。" if stage == "confirmed" else "thsottiaux 发布了 Codex 配额重置公告。",
+                "ack_label": "已知晓",
+                "timing": timing,
+            },
+            "en": {"title": title_en, "message": message_en, "ack_label": "Acknowledge", "timing": en_timing},
+        },
     }
 
 

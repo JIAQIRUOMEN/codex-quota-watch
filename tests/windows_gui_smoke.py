@@ -35,6 +35,13 @@ def main() -> int:
         receipt_dir.mkdir()
         for index in range(1, 4):
             event_id = f"gui_smoke_{index}"
+            timing = {
+                "kind": "unknown",
+                "published_text": "Synthetic test event",
+                "text": "No reset time is being asserted.",
+                "basis": "GUI smoke test only",
+                "confidence": "test",
+            }
             event = {
                 "id": event_id,
                 "receipt_nonce": secrets.token_hex(16),
@@ -42,12 +49,32 @@ def main() -> int:
                 "message": "Temporary GUI smoke test. No real post or account data is used.",
                 "ack_label": "Test button (do not click)",
                 "url": "https://example.invalid/smoke-test",
-                "timing": {
-                    "kind": "unknown",
-                    "published_text": "Synthetic test event",
-                    "text": "No reset time is being asserted.",
-                    "basis": "GUI smoke test only",
-                    "confidence": "test",
+                "timing": timing,
+                "translations": {
+                    "zh-CN": {
+                        "title": f"Codex Quota Watch 测试 {index}/3",
+                        "message": "临时 GUI smoke 测试，不含真实帖子或账户数据。",
+                        "ack_label": "测试按钮（不要点击）",
+                        "timing": {
+                            "kind": "unknown",
+                            "published_text": "合成测试事件",
+                            "text": "未声明重置时间。",
+                            "basis": "仅 GUI smoke 测试",
+                            "confidence": "测试",
+                        },
+                    },
+                    "en": {
+                        "title": f"Codex Quota Watch test {index}/3",
+                        "message": "Temporary GUI smoke test. No real post or account data is used.",
+                        "ack_label": "Test button (do not click)",
+                        "timing": {
+                            "kind": "unknown",
+                            "published_text": "Synthetic test event",
+                            "text": "No reset time is being asserted.",
+                            "basis": "GUI smoke test only",
+                            "confidence": "test",
+                        },
+                    },
                 },
             }
             event_path = event_dir / f"{event_id}.json"

@@ -1,6 +1,6 @@
 """Local, conservative watcher for Codex quota reset announcements."""
 
-__version__ = "0.1.3"
+__version__ = "0.1.4"
 
 from .core import ALLOWED_AUTHORS, classify_post, poll_once, validate_post
 from .daily import daily_gate, evaluate_gate, gate_for_alert, parse_source_datetime, settings_defaults

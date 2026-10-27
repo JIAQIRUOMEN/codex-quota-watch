@@ -19,7 +19,7 @@ SOURCE_FILES = (
     "windows/Show-CodexQuotaAlert.ps1",
     "windows/Invoke-SmokeTest.ps1", "examples/announcement.json",
     "examples/baseline.json", "examples/confirmed.json",
-    "tests/test_monitor.py", "tests/test_daily_pause.py", "tests/windows_gui_smoke.py", "tests/browser_extractor_smoke.cjs",
+    "tests/test_monitor.py", "tests/test_daily_pause.py", "tests/test_popup_language.py", "tests/popup_language_wpf_smoke.ps1", "tests/windows_gui_smoke.py", "tests/browser_extractor_smoke.cjs",
     "scripts/build_release.py", "skills/codex-quota-watch/SKILL.md",
     "skills/codex-quota-watch/references/browser-source.md",
     "skills/codex-quota-watch/scripts/extract-posts.js",

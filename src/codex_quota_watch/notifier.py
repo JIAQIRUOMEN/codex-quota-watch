@@ -21,14 +21,41 @@ def write_event(alert: dict[str, Any], event_dir: str | Path) -> Path:
     timing = alert["timing"]
     if not isinstance(alert["receipt_nonce"], str) or len(alert["receipt_nonce"]) != 32 or any(ch not in "0123456789abcdef" for ch in alert["receipt_nonce"]):
         raise ValueError("invalid receipt nonce")
-    if not isinstance(timing, dict) or timing.get("kind") not in {"explicit", "estimated", "unknown"}:
-        raise ValueError("invalid timing data")
-    if not isinstance(timing.get("text"), str) or not isinstance(timing.get("published_text"), str):
-        raise ValueError("timing text is required")
-    if timing["kind"] == "estimated" and not str(timing.get("basis", "")).strip():
-        raise ValueError("estimated timing requires evidence basis")
+    def validate_timing(value: Any, label: str, strict: bool = True) -> None:
+        if not isinstance(value, dict) or value.get("kind") not in {"explicit", "estimated", "unknown"}:
+            raise ValueError(f"invalid {label} timing data")
+        fields = ("published_text", "text", "basis", "confidence") if strict else ("published_text", "text")
+        for field in fields:
+            item = value.get(field)
+            if not isinstance(item, str) or len(item) > 350:
+                raise ValueError(f"invalid {label} timing {field}")
+        if not value["published_text"].strip() or not value["text"].strip():
+            raise ValueError(f"{label} timing text is required")
+        basis = value.get("basis", "")
+        if value["kind"] == "estimated" and (not isinstance(basis, str) or not basis.strip()):
+            raise ValueError(f"{label} estimated timing requires evidence basis")
+
+    validate_timing(timing, "event", strict=False)
+    for field in ("basis", "confidence"):
+        value = timing.get(field)
+        if value is not None and (not isinstance(value, str) or len(value) > 350):
+            raise ValueError(f"invalid event timing {field}")
     if len(alert["title"]) > 120 or len(alert["message"]) > 2000 or len(alert["url"]) > 2000:
         raise ValueError("alert text exceeds UI limits")
+    translations = alert.get("translations")
+    if translations is not None:
+        if not isinstance(translations, dict) or set(translations) != {"zh-CN", "en"}:
+            raise ValueError("translations must contain zh-CN and en")
+        for language, translated in translations.items():
+            if not isinstance(translated, dict):
+                raise ValueError(f"invalid {language} translation")
+            for field, limit in (("title", 120), ("message", 2000), ("ack_label", 120)):
+                item = translated.get(field)
+                if not isinstance(item, str) or not item.strip() or len(item) > limit:
+                    raise ValueError(f"invalid {language} translation {field}")
+            validate_timing(translated.get("timing"), f"{language} translation")
+            if translated["timing"]["kind"] != timing["kind"]:
+                raise ValueError(f"{language} translation timing kind must match event")
     directory = Path(event_dir)
     directory.mkdir(parents=True, exist_ok=True)
     path = directory / f"{alert['id']}.json"
