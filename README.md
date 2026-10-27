@@ -10,26 +10,46 @@
 
 Codex Quota Watch 通过 Skill 和本地命令行程序提醒 Codex 额度重置公告及已确认的重置状态。启用 Skill 时，若宿主提供浏览器工具，它会默认读取 X 上的 Tibo 主页和本人回复；CLI 则继续接收 JSON 或用户配置的数据源命令。
 
-## 命令安装
+## 下载方式
 
-先安装 Codex Skill 和 Python 程序。需要 Node.js/npm、Git 和 Python 3.10 或更新版本：
+以下两种方式任选一种，无需重复安装。每种方式都要安装 Skill 和 Python CLI 这两个组件，才能使用完整监测流程。
+
+<details>
+<summary><strong>方式一：命令安装</strong></summary>
+
+需要 Node.js/npm、Git 和 Python 3.10 或更新版本：
 
 ```powershell
 npx skills add JIAQIRUOMEN/codex-quota-watch
 python -m pip install "git+https://github.com/JIAQIRUOMEN/codex-quota-watch.git"
 ```
 
-## 下载 ZIP 安装
+</details>
 
-下载 [Skill ZIP](https://github.com/JIAQIRUOMEN/codex-quota-watch/releases/latest/download/codex-quota-watch-skill.zip)，解压到 `C:\Users\你的用户名\.codex\skills\`，确认有 `codex-quota-watch\SKILL.md`、`references\browser-source.md` 和 `scripts\extract-posts.js`，不要再套一层同名文件夹。若设置了 `CODEX_HOME`，则解压到 `%CODEX_HOME%\skills\`。
+<details>
+<summary><strong>方式二：下载 ZIP 安装</strong></summary>
 
-下载 [源码 ZIP](https://github.com/JIAQIRUOMEN/codex-quota-watch/releases/latest/download/codex-quota-watch-source.zip) 并解压，进入 `pyproject.toml` 所在目录，运行：
+1. 下载 [Skill ZIP](https://github.com/JIAQIRUOMEN/codex-quota-watch/releases/latest/download/codex-quota-watch-skill.zip) 和 [源码 ZIP](https://github.com/JIAQIRUOMEN/codex-quota-watch/releases/latest/download/codex-quota-watch-source.zip)，两份都需要。
+2. 将 Skill ZIP 解压到 `C:\Users\你的用户名\.codex\skills\`。若设置了 `CODEX_HOME`，则解压到 `%CODEX_HOME%\skills\`。最终目录应如下，不要再套一层同名文件夹：
+
+```text
+codex-quota-watch/
+├── SKILL.md
+├── references/browser-source.md
+└── scripts/extract-posts.js
+```
+
+3. 解压源码 ZIP，进入 `pyproject.toml` 所在目录，运行：
 
 ```powershell
 python -m pip install .
 ```
 
-两种方式装好后，重启 Codex 或新开一轮对话，输入 `$codex-quota-watch`，再让它启用每 3 小时监测。设置任务前，需要能登录并刷新真实 X 来源，且成功读取帖子；首次读取会静默建立基线，之后才安排检查。电脑休眠或离线时，检查会延迟。
+</details>
+
+## 安装后使用
+
+任选一种方式完成安装后，重启 Codex 或新开一轮对话，输入 `$codex-quota-watch`，再让它启用每 3 小时监测。设置任务前，需要能登录并刷新真实 X 来源，且成功读取帖子；首次读取会静默建立基线，之后才安排检查。电脑休眠或离线时，检查会延迟。
 
 ## 离线示例
 
@@ -126,7 +146,7 @@ MIT，见 [LICENSE](LICENSE)。
 
 ## 首次读取 Tibo
 
-1. 安装 Skill 和 Python 程序后，新开一个 Codex 回合，输入 `$codex-quota-watch`。
+1. 任选一种下载方式完成安装后，新开一个 Codex 回合，输入 `$codex-quota-watch`。
 2. 明确说：**“启用 Tibo 每3小时监测”**。
 3. 如果宿主提供浏览器工具，Skill 会打开 `https://x.com/thsottiaux` 和本人 Replies，使用只读 DOM 脚本读取可见帖子。首次遇到登录时，请你直接在浏览器里登录一次；后续复用该浏览器会话。不要把密码或 Cookie 发给 Codex，也不承诺保存密码或 Cookie。
 4. 成功读取真实帖子后，才会建立静默基线并安排检查。通常不需要自己写 JSON。空正文、登录失效或无法读取时会停在待配置，不会假报启动成功。

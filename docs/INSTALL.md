@@ -6,16 +6,37 @@
 
 从 GitHub 安装 Python 包或 Skill 都意味着信任仓库内容。安装前请检查源码和 Skill 指令；如需完整性校验，可用 `SHA256SUMS` 验证下载文件。哈希可以发现文件变化，但不能独立证明发布者身份。
 
-## 两个下载包各自做什么
+## 下载方式
 
-打开仓库的 [GitHub Releases](https://github.com/JIAQIRUOMEN/codex-quota-watch/releases)，按需下载一个或两个包：
+以下两种方式任选一种，无需重复安装。每种方式都要安装 Python CLI 和 Codex Skill 两个组件；source ZIP 与 Skill ZIP 是同一条 ZIP 安装路线中的两个组件，不是二选一。
+
+<details>
+<summary><strong>方式一：命令安装</strong></summary>
+
+需要 Python 3.10 或更新版本、Git、Node.js/npm。依次执行以下两条命令，即完成这一路线的两个组件安装：
+
+```powershell
+python -m pip install "git+https://github.com/JIAQIRUOMEN/codex-quota-watch.git"
+npx skills add JIAQIRUOMEN/codex-quota-watch
+```
+
+</details>
+
+<details>
+<summary><strong>方式二：下载 ZIP 安装</strong></summary>
+
+从下方下载 source ZIP 和 Skill ZIP，并按后文的 [Python 包安装步骤](#python-包安装步骤)与 [Skill ZIP 安装步骤](#skill-zip-安装步骤)分别安装两个组件。两份 ZIP 都需要安装，才能使用完整监测流程。
+
+### 两个 ZIP 各自包含什么
+
+打开仓库的 [GitHub Releases](https://github.com/JIAQIRUOMEN/codex-quota-watch/releases)，下载 source ZIP 和 Skill ZIP 两个包：
 
 - `codex-quota-watch-source.zip`：包含 Python 命令行工具、Windows 提醒窗口、示例和文档。要在本机运行轮询，需要安装这个包。
 - `codex-quota-watch-skill.zip`：包含 Codex 指令、浏览器读取教程和只读 DOM 脚本；不含 Python CLI，也不会自行运行或定时。
 
 `SHA256SUMS` 列出两个压缩包的 SHA-256。直接下载：[source ZIP](https://github.com/JIAQIRUOMEN/codex-quota-watch/releases/latest/download/codex-quota-watch-source.zip)、[Skill ZIP](https://github.com/JIAQIRUOMEN/codex-quota-watch/releases/latest/download/codex-quota-watch-skill.zip)。
 
-## Install the Python package
+### Python 包安装步骤
 
 下载 source ZIP 后解压，进入其中包含 `pyproject.toml` 的 `codex-quota-watch` 目录，再运行：
 
@@ -26,16 +47,9 @@ python -m pip install .
 codex-quota-watch --help
 ```
 
-也可以从 GitHub 安装（需要已安装 Git）：
-
-```powershell
-python -m pip install "git+https://github.com/JIAQIRUOMEN/codex-quota-watch.git"
-codex-quota-watch --help
-```
-
 从本地源码安装时，在仓库根目录运行 `python -m pip install .`。也可以用 `python -m codex_quota_watch` 调用命令行工具。
 
-## Install the Skill ZIP on Windows
+### Skill ZIP 安装步骤
 
 Skill ZIP 中是一层目录、三个文件。解压后结构如下：
 
@@ -61,15 +75,9 @@ Get-Content (Join-Path $skillRoot 'codex-quota-watch\SKILL.md') -TotalCount 12
 
 安装 Skill 后，新开一个 Codex 回合并调用 `$codex-quota-watch`。如果 Codex 不认识这个名称，请重启 Codex 后再试。
 
-也可以使用 [skills CLI](https://www.skills.sh/docs/cli) 直接从 GitHub 安装：
+</details>
 
-```powershell
-npx skills add JIAQIRUOMEN/codex-quota-watch
-```
-
-如果 CLI 提示选择 Skill，请选 `codex-quota-watch`，然后新开一个 Codex 回合。此方式只安装指令，不会安装 Python 包或启动监测。
-
-## Verify and initialize
+## 检查安装并初始化
 
 ```powershell
 codex-quota-watch --help
@@ -79,13 +87,14 @@ codex-quota-watch --state-dir .\codex-quota-watch-state status
 
 状态、SQLite 数据库、事件文件和回执保存在所选目录。真实数据请使用本地私有目录。只做 JSON 验证时，运行 `poll --input FILE --dry-run`；source ZIP 中的 fixtures 都是合成样例。首次轮询会建立静默基线。
 
-## First-run activation: from installation to recurring checks
+## 安装后使用：首次读取与定时监测
 
-1. **分别安装。** 要运行命令行工具，安装 Python source 包；要让 Codex 协助配置，再单独安装 Skill。Skill ZIP 不含 Python 包；两个压缩包都不会自动运行或定时。
-2. **新开回合并调用 Skill。** 在新的 Codex 回合输入 `$codex-quota-watch`。若名称未识别，请重启 Codex 后再试。没有监测意图时，Skill 会问你只做一次测试还是启用定时监测。
-3. **明确要求启用。** 说“启用额度监测”或“每3小时监测”。使用默认浏览器路线时，只需选定实际本地状态目录，不必提供 source command；宿主没有 browser 工具时，才需要接入自己的来源命令或 JSON。要使用 CLI 时，可以明确请 Codex 代为安装 Python 包。
-4. **验证真实、可刷新的数据。** Skill 默认尝试使用宿主 browser 工具打开 `https://x.com/thsottiaux` 与本人 Replies，再用只读 DOM 脚本提取可见正文、作者、时间和链接。浏览器路线只需选择实际状态目录，不必自己提供 source command。首次需要登录时，请你直接在浏览器登录一次，后续复用该会话；不要把密码或 Cookie 发给 Codex，也不承诺保存密码或 Cookie。示例 fixtures 和旧的静态 JSON 不算真实来源。登录失效、正文为空或浏览器无法访问时，设置保持待完成。若宿主没有 browser 工具，才需要你接入自己的数据源；没有真实可刷新的来源就保持待配置。
-5. **建基线、安排并验证。** 首次成功读取会静默建立基线。宿主支持自动化时，Codex 先检查已有匹配任务，再为当前聊天创建或复用每三小时一次的 heartbeat，并使用已验证的来源和状态目录。没有宿主自动化工具时，只有已配置真实可刷新的来源命令才能运行前台 CLI 轮询，例如 `codex-quota-watch --state-dir STATE_DIR watch --source-command-json '["your-refreshable-source","--json"]' --interval 10800`；不要用 `--input` 指向静态快照来冒充定时读取。终端必须保持打开。不会安装后台服务、Windows 开机任务或自动运行脚本。
+安装方式任选其一并完成两个组件后：
+
+1. **新开回合并调用 Skill。** 在新的 Codex 回合输入 `$codex-quota-watch`。若名称未识别，请重启 Codex 后再试。没有监测意图时，Skill 会问你只做一次测试还是启用定时监测。
+2. **明确要求启用。** 说“启用额度监测”或“每3小时监测”。使用默认浏览器路线时，只需选定实际本地状态目录，不必提供 source command；宿主没有 browser 工具时，才需要接入自己的来源命令或 JSON。
+3. **验证真实、可刷新的数据。** Skill 默认尝试使用宿主 browser 工具打开 `https://x.com/thsottiaux` 与本人 Replies，再用只读 DOM 脚本提取可见正文、作者、时间和链接。首次需要登录时，请你直接在浏览器登录一次，后续复用该会话；不要把密码或 Cookie 发给 Codex，也不承诺保存密码或 Cookie。示例 fixtures 和旧的静态 JSON 不算真实来源。登录失效、正文为空或浏览器无法访问时，设置保持待完成。若宿主没有 browser 工具，才需要你接入自己的数据源；没有真实可刷新的来源就保持待配置。
+4. **建基线、安排并验证。** 首次成功读取会静默建立基线。宿主支持自动化时，Codex 先检查已有匹配任务，再为当前聊天创建或复用每三小时一次的 heartbeat，并使用已验证的来源和状态目录。没有宿主自动化工具时，只有已配置真实可刷新的来源命令才能运行前台 CLI 轮询，例如 `codex-quota-watch --state-dir STATE_DIR watch --source-command-json '["your-refreshable-source","--json"]' --interval 10800`；不要用 `--input` 指向静态快照来冒充定时读取。终端必须保持打开。不会安装后台服务、Windows 开机任务或自动运行脚本。
 
 普通用户使用 Skill 的浏览器读取路线时，不需要自己制作 JSON。`skills/codex-quota-watch/scripts/extract-posts.js` 随 Skill ZIP 提供，依赖宿主的 browser 工具并只读可见 DOM；它不是 Python/pip 库内置的 X 抓取器，也不是云服务。CLI 单独使用时仍只接受 `--input` JSON 或 `--source-command-json` 命令。
 
