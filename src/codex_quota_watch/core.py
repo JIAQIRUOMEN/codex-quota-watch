@@ -80,7 +80,7 @@ def _beijing_time(raw: str) -> str:
             return raw[:180] + " (来源未注明时区)"
         from datetime import timedelta
         local = parsed.astimezone(timezone(timedelta(hours=8)))
-        return local.strftime("%Y-%m-%d %H:%M UTC+08:00 (北京时间)")
+        return local.strftime("%Y-%m-%d %H:%M UTC+08:00") + " (北京时间)"
     except (ValueError, OverflowError):
         return raw[:180] + " (原始来源时间)"
 

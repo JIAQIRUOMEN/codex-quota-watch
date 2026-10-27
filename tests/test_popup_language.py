@@ -7,9 +7,12 @@ import json
 import re
 import tempfile
 import unittest
+from datetime import datetime as PythonDateTime, timezone
 from pathlib import Path
+from unittest.mock import patch
 
 from codex_quota_watch import Store, classify_post, poll_once
+from codex_quota_watch.core import make_alert
 from codex_quota_watch.notifier import write_event
 
 
@@ -117,6 +120,35 @@ class PopupLanguageTests(unittest.TestCase):
         self.assertIn("原始来源时间", chinese)
         self.assertIn("original source time", english)
         self.assertNotIn("UTC+08:00", english)
+
+    def test_old_windows_locale_unicode_strftime_failure_keeps_beijing_time(self) -> None:
+        class LocaleSensitiveDateTime(PythonDateTime):
+            @classmethod
+            def fromisoformat(cls, value: str):
+                return cls(2026, 10, 27, 1, 0, tzinfo=timezone.utc)
+
+            def astimezone(self, tz=None):
+                return self
+
+            def strftime(self, format_string: str) -> str:
+                if not format_string.isascii():
+                    raise UnicodeEncodeError("mbcs", format_string, 0, 1, "locale cannot encode Chinese format text")
+                return "2026-10-27 09:00 UTC+08:00"
+
+        post = {
+            "id": "locale-time",
+            "author": "thsottiaux",
+            "text": "Codex quota reset is complete.",
+            "created_at": SOURCE_TIME,
+        }
+        with patch("codex_quota_watch.core.datetime", LocaleSensitiveDateTime):
+            alert = make_alert(classify_post(post))
+
+        expected_time = "2026-10-27 09:00 UTC+08:00"
+        chinese = alert["translations"]["zh-CN"]["timing"]["published_text"]
+        english = alert["translations"]["en"]["timing"]["published_text"]
+        self.assertEqual(chinese, f"原帖时间：{expected_time} (北京时间)")
+        self.assertEqual(english, f"Original post time: {expected_time} (Beijing time)")
 
     def test_legacy_event_without_translations_remains_accepted_unchanged(self) -> None:
         alert = self.alert_for("Codex quota reset is complete.", "legacy-event")

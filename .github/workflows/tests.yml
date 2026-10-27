@@ -26,3 +26,7 @@ jobs:
         run: python -m unittest discover -s tests -v
       - name: Run browser extractor fixture smoke test
         run: node tests/browser_extractor_smoke.cjs
+      - name: Verify WPF language and acknowledgement behavior
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: .\tests\popup_language_wpf_smoke.ps1 -TestDirectory "$env:RUNNER_TEMP\quota-watch-wpf"
